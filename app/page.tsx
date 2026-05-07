@@ -1,66 +1,44 @@
-import Image from "next/image";
+/*Desarrolle un programa que permita comprimir archivos de texto en
+formato TXT mediante el uso del algoritmo de Huffman. El sistema deberá
+solicitar al usuario el ingreso de un texto o cadena, y mostrar de manera
+detallada el desarrollo paso a paso del proceso de compresión. Inicialmente,
+deberá generar y presentar la tabla de frecuencias (absoluta o relativa) de
+aparición de cada carácter o símbolo en el texto ingresado. Luego, deberá
+construir y mostrar el árbol de Huffman resultante, así como la codificación
+asignada a cada carácter según dicho árbol. Asimismo, el programa deberá
+generar y mostrar el archivo comprimido correspondiente. Posteriormente,
+deberá permitir la descompresión del archivo utilizando el árbol de Huffman
+previamente generado, mostrando el texto original recuperado. Además, el
+programa deberá permitir al usuario seleccionar la información que desea
+visualizar, entre las siguientes opciones: el número de bits empleados por la
+cadena original, el número de bits utilizados al aplicar la codificación de
+Huffman (según el árbol generado) o el porcentaje de reducción de bits
+logrado. Finalmente, el programa deberá contar con una interfaz gráfica
+amigable e intuitiva que facilite la interacción del usuario.
+*/
+
+import { Button, Input, Label } from "@heroui/react";
+
+
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        {/* <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+      <main className="container-ejer">
+        <h1 className="text-center">ALGORITMO DE HUFFMAN</h1>
+        <div className="flex flex-col mb-4 gap-1 w-80">
+          <Label>Ingrese texto a comprimir:</Label>
+            <Input
+              type= "text"
+              placeholder="ejm: Palabra"
+              min={1}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div> */}
-        Iniciando proyecto de ALGORITMO DE HUFFMAN
+        </div>
+        <div className="mb-4">
+          <Button variant="primary">Comprimir</Button>
+        </div>
+        <div className="mb-4">
+          <Button variant="primary">Descomprimir</Button>
+        </div>
       </main>
-    </div>
   );
 }
