@@ -1,26 +1,7 @@
 "use client";
 
-/*Desarrolle un programa que permita comprimir archivos de texto en
-formato TXT mediante el uso del algoritmo de Huffman. El sistema deberá
-solicitar al usuario el ingreso de un texto o cadena, y mostrar de manera
-detallada el desarrollo paso a paso del proceso de compresión. Inicialmente,
-deberá generar y presentar la tabla de frecuencias (absoluta o relativa) de
-aparición de cada carácter o símbolo en el texto ingresado. Luego, deberá
-construir y mostrar el árbol de Huffman resultante, así como la codificación
-asignada a cada carácter según dicho árbol. Asimismo, el programa deberá
-generar y mostrar el archivo comprimido correspondiente. Posteriormente,
-deberá permitir la descompresión del archivo utilizando el árbol de Huffman
-previamente generado, mostrando el texto original recuperado. Además, el
-programa deberá permitir al usuario seleccionar la información que desea
-visualizar, entre las siguientes opciones: el número de bits empleados por la
-cadena original, el número de bits utilizados al aplicar la codificación de
-Huffman (según el árbol generado) o el porcentaje de reducción de bits
-logrado. Finalmente, el programa deberá contar con una interfaz gráfica
-amigable e intuitiva que facilite la interacción del usuario.
-*/
-
 import { Button, FieldError, Input, Label, TextField } from "@heroui/react";
-import { useState } from "react";
+import { useState, useRef, type ChangeEvent } from "react";
 
 type HuffmanNode = {
   caracter: string | null;
@@ -33,16 +14,16 @@ type HuffmanNode = {
 const calcularFrencuencias = (texto: string) => {
   const frecuencias: Record<string, number> = {};
   for (const caracter of texto) {
-    if (frecuencias[caracter]) {
-      frecuencias[caracter]++;
+    if (frecuencias[caracter]) { // Si el caracter ya existe en el objeto, incrementa su frecuencia
+      frecuencias[caracter]++;  
     } else {
-      frecuencias[caracter] = 1;
+      frecuencias[caracter] = 1; // Si el caracter no existe, inicializa su frecuencia en 1
     }
   }
-  return frecuencias;
+  return frecuencias; // ejm "aba" => { "a": 2, "b": 1 }
 };
 
-// funcion para construir el árbol de Huffman a partir de las frecuencias calculadas
+// funcion para construir el árbol de Huffman a partir de las frecuencias calculadas de los caracteres
 const construirArbolHuffman = (frecuencias: Record<string, number>): HuffmanNode => {
   const nodos: HuffmanNode[] = Object.entries(frecuencias)
     .map(([caracter, frecuencia]) => ({ caracter, frecuencia }))
@@ -51,6 +32,7 @@ const construirArbolHuffman = (frecuencias: Record<string, number>): HuffmanNode
   while (nodos.length > 1) {
     const nodo1 = nodos.shift()!;
     const nodo2 = nodos.shift()!;
+
     const nuevoNodo: HuffmanNode = {
       caracter: null,
       frecuencia: nodo1.frecuencia + nodo2.frecuencia,
@@ -61,30 +43,31 @@ const construirArbolHuffman = (frecuencias: Record<string, number>): HuffmanNode
     nodos.sort((a, b) => a.frecuencia - b.frecuencia);
   }
 
-  return nodos[0];
+  return nodos[0]; // el último nodo restante es la raíz del árbol de Huffman
 };
 
-// función para generar la codificación de cada caracter según el árbol de Huffman construido
+// función para recorrer el árbol de Huffman para asignar un código binario a cada carácter.
 const generarCodificacion = (nodo: HuffmanNode, codigo: string = "", codificacion: Record<string, string> = {}): Record<string, string> => {
+
   if (nodo.caracter != null) {
-    codificacion[nodo.caracter] = codigo;
+    codificacion[nodo.caracter] = codigo; // se asigna el código binario actual a ese caracter
   } else {
     generarCodificacion(nodo.izquierda!, codigo + "0", codificacion);
     generarCodificacion(nodo.derecha!, codigo + "1", codificacion);
   }
-  return codificacion;
+  return codificacion; // devuelve el objeto con la codificación de cada caracter, ejm: { "a": "0", "b": "10", "c": "11" }
 };
 
-// funcion para comprimir el texto utilizando la codificación generada
+// funcion para comprimir el texto orignal utilizando la codificación generada
 const comprimirTexto = (texto: string, codificacion: Record<string, string>) =>{
   let textoComprimido = "";
   for (const caracter of texto) {
     textoComprimido += codificacion[caracter];
   }
-  return textoComprimido;
+  return textoComprimido; // devuelve una secuencia de bits comprimida si texto es "aba" y codificacion es { "a": "0", "b": "10" } => devuelve "0100"
 };
 
-// funcion para descomprimir el texto utilizando el árbol de Huffman
+// funcion para descomprimir y tomar la cadena de bits comprimida y usa el arbol de Huffman para recuperar el texto original
 const descomprimirTexto = (textoComprimido: string, nodo: HuffmanNode): string => {
   let textoDescomprimido = "";
   let nodoActual = nodo;
@@ -95,7 +78,7 @@ const descomprimirTexto = (textoComprimido: string, nodo: HuffmanNode): string =
       nodoActual = nodo;
     }
   }
-  return textoDescomprimido;
+  return textoDescomprimido; // devuelve el texto original recuperado a partir de la secuencia de bits comprimida, ejm: si textoComprimido es "0100" y el árbol de Huffman asigna "a" a "0" y "b" a "10", devuelve "aba"
 }
 
 export default function Home() {
@@ -106,6 +89,87 @@ export default function Home() {
   const [textoComprimido, setTextoComprimido] = useState("");
   const [textoDescomprimido, setTextoDescomprimido] = useState("");
   const [isInvalidInput, setInvalidInput] = useState(false);
+  const [operacion, setOperacion] = useState<"ninguna" | "comprimir" | "cargar" | "flujo">("ninguna");
+  const [mensajeOperacion, setMensajeOperacion] = useState("");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  /////////////////////////////////////
+  const descargarTxt = () => {
+    if (texto.trim() === "") {
+      setInvalidInput(true);
+      return;
+    }
+    setInvalidInput(false);
+
+    const frecuenciasCalculadas = calcularFrencuencias(texto);
+    setFrecuencias(frecuenciasCalculadas);
+
+    const arbol = construirArbolHuffman(frecuenciasCalculadas);
+    setArbolHuffman(arbol);
+
+    const codificacionGenerada = generarCodificacion(arbol);
+    setCodificacion(codificacionGenerada);
+
+    const textoComprimidoGenerado = comprimirTexto(texto, codificacionGenerada);
+    setTextoComprimido(textoComprimidoGenerado);
+
+    const textoDescomprimidoGenerado = descomprimirTexto(textoComprimidoGenerado, arbol);
+    setTextoDescomprimido(textoDescomprimidoGenerado);
+    setOperacion("comprimir");
+    setMensajeOperacion("Archivo generado y descargado. Cargue el archivo para ver la información de la descompresión.");
+
+    const payload = {
+      original: texto,
+      comprimido: textoComprimidoGenerado,
+      codificacion: codificacionGenerada,
+      frecuencias: frecuenciasCalculadas,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "huffman.txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const cargarTxt = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = reader.result as string;
+        const data = JSON.parse(text);
+        const original = data.original ?? "";
+        const comprimido = data.comprimido ?? "";
+        const frecuenciasData: Record<string, number> = data.frecuencias ?? {};
+
+        setTexto(original);
+        setFrecuencias(frecuenciasData);
+        const arbol = construirArbolHuffman(frecuenciasData);
+        setArbolHuffman(arbol);
+        const codificacionGenerada = data.codificacion ?? generarCodificacion(arbol);
+        setCodificacion(codificacionGenerada);
+        setTextoComprimido(comprimido);
+        const textoDescomprimidoGenerado = comprimido && arbol ? descomprimirTexto(comprimido, arbol) : "";
+        setTextoDescomprimido(textoDescomprimidoGenerado);
+        setOperacion("cargar");
+        setMensajeOperacion("Archivo cargado. Mostrando resultados de la descompresión.");
+      } catch (err) {
+        alert("Archivo inválido. Asegúrese de que sea un .txt creado por la herramienta.");
+      }
+    };
+    reader.readAsText(file);
+    e.currentTarget.value = "";
+  };
 
   const manejarComprimir = () => {
     if (texto.trim() === "") {
@@ -117,6 +181,8 @@ export default function Home() {
 
     const frecuenciasCalculadas  = calcularFrencuencias(texto);
     setFrecuencias(frecuenciasCalculadas);
+    setOperacion("flujo");
+    setMensajeOperacion("Mostrando el flujo completo directo.");
 
     const arbol = construirArbolHuffman(frecuenciasCalculadas);
     setArbolHuffman(arbol);
@@ -147,132 +213,151 @@ export default function Home() {
                   if (isInvalidInput && e.target.value.trim() !== "") {
                     setInvalidInput(false); // Limpia el error al escribir
                   }
+                  if (operacion !== "ninguna") {
+                    setOperacion("ninguna");
+                    setMensajeOperacion("");
+                  }
                 }}
               />
               <FieldError>Debe ingresar texto</FieldError>
             </TextField>
           </div>
           <div className="alerta">
-            <span></span>
+            {operacion !== "ninguna" && (
+              <div className="rounded border border-slate-700 bg-slate-900 p-3 text-slate-100">
+                <p className="text-sm">{mensajeOperacion}</p>
+              </div>
+            )}
           </div>
           <div className="mb-4">
-            <Button variant="primary" onClick={manejarComprimir}>Comprimir</Button>
+            <Button variant="primary" onClick={descargarTxt}>Comprimir y descargar</Button>
           </div>
+
           <div className="mb-4">
-            <Button variant="primary" onClick={manejarComprimir}>
-              Descomprimir
-            </Button>
+            <Button variant="primary" onClick={cargarTxt}>Cargar y descomprimir</Button>
+            <input ref={fileInputRef} type="file" accept=".txt,text/plain" className="hidden" onChange={handleFileChange} />
+          </div>
+
+          <div className="mb-4">
+            <Button variant="primary" onClick={manejarComprimir}>Ver flujo completo</Button>
           </div>
         </div>
-        <div className="mb-4">
-          {
-            Object.keys(frecuencias).length > 0 && (
-              <div className="bg-slate-800 text-slate-100 p-4 rounded shadow mb-4 border border-slate-700">
-                <h2 className="text-xl font-bold mb-2">Tabla de Frecuencias</h2>
-                <table className="border-collapse border border-slate-700 w-full">
-                  <thead>
-                    <tr className="bg-slate-900">
-                      <th className="border border-slate-700 px-4 py-2">Carácter</th>
-                      <th className="border border-slate-700 px-4 py-2">Frecuencia Absoluta</th>
-                      <th className="border border-slate-700 px-4 py-2">Frecuencia Relativa</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(() => {
-                      const total = Object.values(frecuencias).reduce((sum, f) => sum + f, 0);
-                      return Object.entries(frecuencias).map(([caracter, frecuencia]) => (
-                        <tr key={caracter}>
-                          <td className="border border-slate-700 px-4 py-2 text-center text-slate-100">
-                            {caracter === " " ? "Espacio" : caracter}
-                          </td>
-                          <td className="border border-slate-700 px-4 py-2 text-center text-slate-100">{frecuencia}</td>
-                          <td className="border border-slate-700 px-4 py-2 text-center text-slate-100">
-                            {((frecuencia / total) * 100).toFixed(2)}%
-                          </td>
+        {(operacion === "cargar" || operacion === "flujo") && (
+          <>
+            <div className="mb-4">
+              {
+                Object.keys(frecuencias).length > 0 && (
+                  <div className="bg-slate-800 text-slate-100 p-4 rounded shadow mb-4 border border-slate-700">
+                    <h2 className="text-xl font-bold mb-2">Tabla de Frecuencias</h2>
+                    <table className="border-collapse border border-slate-700 w-full">
+                      <thead>
+                        <tr className="bg-slate-900">
+                          <th className="border border-slate-700 px-4 py-2">Carácter</th>
+                          <th className="border border-slate-700 px-4 py-2">Frecuencia Absoluta</th>
+                          <th className="border border-slate-700 px-4 py-2">Frecuencia Relativa</th>
                         </tr>
-                      ));
-                    })()}
-                  </tbody>
-                </table>
-              </div>
-            )
-          }
-        </div>
-        <div className="mb-4">
-          {
-            arbolHuffman && (
-              <div className="bg-slate-800 text-slate-100 p-4 rounded shadow mb-4 border border-slate-700">
-                <h2 className="text-xl font-bold mb-2">Árbol de Huffman</h2>
-                <pre className="bg-slate-900 p-2 rounded text-sm overflow-x-auto text-slate-100">
-                  {(() => {
-                    const mostrarArbol = (nodo: HuffmanNode, prefijo = ""): string => {
-                      if (!nodo) return "";
-                      if (nodo.caracter !== null) return `${prefijo}${nodo.caracter} (${nodo.frecuencia})\n`;
-                      return mostrarArbol(nodo.izquierda!, prefijo + "0-") + mostrarArbol(nodo.derecha!, prefijo + "1-");
-                    };
-                    return mostrarArbol(arbolHuffman);
-                  })()}
-                </pre>
-              </div>
-            )
-          }
-        </div>
-        <div className="mb-4">
-          {
-            Object.keys(codificacion).length > 0 && (
-              <div className="bg-slate-800 text-slate-100 p-4 rounded shadow mb-4 border border-slate-700">
-                <h2 className="text-xl font-bold mb-2">Codificación Huffman</h2>
-                <table className="border-collapse border border-slate-700 w-full">
-                  <thead>
-                    <tr className="bg-slate-900">
-                      <th className="border border-slate-700 px-4 py-2">Carácter</th>
-                      <th className="border border-slate-700 px-4 py-2">Código Binario</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(codificacion).map(([caracter, codigo]) => (
-                      <tr key={caracter}>
-                        <td className="border border-slate-700 px-4 py-2 text-center text-slate-100">
-                          {caracter === " " ? "Espacio" : caracter}
-                        </td>
-                        <td className="border border-slate-700 px-4 py-2 text-center font-mono text-slate-100">{codigo}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )
-          }
-        </div>
-        <div className="mb-4">
-          {textoComprimido && (
-            <div className="bg-slate-800 text-slate-100 p-4 rounded shadow mb-4 border border-slate-700">
-              <h2 className="text-xl font-bold mb-2">Resultados de Compresión</h2>
-              <div className="mb-4">
-                <h3 className="font-semibold">Texto Comprimido:</h3>
-                <p className="bg-slate-900 p-2 rounded font-mono text-sm break-all text-slate-100">{textoComprimido}</p>
-              </div>
-              <div className="mb-4">
-                <h3 className="font-semibold">Texto Descomprimido:</h3>
-                <p className="bg-slate-900 p-2 rounded text-slate-100">{textoDescomprimido}</p>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-slate-900 p-3 rounded border border-slate-700">
-                  <p className="font-semibold">Bits Originales:</p>
-                  <p className="text-lg">{texto.length * 8}</p>
-                </div>
-                <div className="bg-slate-900 p-3 rounded border border-slate-700">
-                  <p className="font-semibold">Bits Comprimidos:</p>
-                  <p className="text-lg">{textoComprimido.length}</p>
-                </div>
-                <div className="bg-slate-900 p-3 rounded border border-slate-700">
-                  <p className="font-semibold">Reducción:</p>
-                  <p className="text-lg">{((1 - textoComprimido.length / (texto.length * 8)) * 100).toFixed(2)}%</p>
-                </div>
-              </div>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          const total = Object.values(frecuencias).reduce((sum, f) => sum + f, 0);
+                          return Object.entries(frecuencias).map(([caracter, frecuencia]) => (
+                            <tr key={caracter}>
+                              <td className="border border-slate-700 px-4 py-2 text-center text-slate-100">
+                                {caracter === " " ? "Espacio" : caracter}
+                              </td>
+                              <td className="border border-slate-700 px-4 py-2 text-center text-slate-100">{frecuencia}</td>
+                              <td className="border border-slate-700 px-4 py-2 text-center text-slate-100">
+                                {((frecuencia / total) * 100).toFixed(2)}%
+                              </td>
+                            </tr>
+                          ));
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              }
             </div>
-          )}
-        </div>
+
+            <div className="mb-4">
+              {
+                arbolHuffman && (
+                  <div className="bg-slate-800 text-slate-100 p-4 rounded shadow mb-4 border border-slate-700">
+                    <h2 className="text-xl font-bold mb-2">Árbol de Huffman</h2>
+                    <pre className="bg-slate-900 p-2 rounded text-sm overflow-x-auto text-slate-100">
+                      {(() => {
+                        const mostrarArbol = (nodo: HuffmanNode, prefijo = ""): string => {
+                          if (!nodo) return "";
+                          if (nodo.caracter !== null) return `${prefijo}${nodo.caracter} (${nodo.frecuencia})\n`;
+                          return mostrarArbol(nodo.izquierda!, prefijo + "0-") + mostrarArbol(nodo.derecha!, prefijo + "1-");
+                        };
+                        return mostrarArbol(arbolHuffman);
+                      })()}
+                    </pre>
+                  </div>
+                )
+              }
+            </div>
+
+            <div className="mb-4">
+              {
+                Object.keys(codificacion).length > 0 && (
+                  <div className="bg-slate-800 text-slate-100 p-4 rounded shadow mb-4 border border-slate-700">
+                    <h2 className="text-xl font-bold mb-2">Codificación Huffman</h2>
+                    <table className="border-collapse border border-slate-700 w-full">
+                      <thead>
+                        <tr className="bg-slate-900">
+                          <th className="border border-slate-700 px-4 py-2">Carácter</th>
+                          <th className="border border-slate-700 px-4 py-2">Código Binario</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(codificacion).map(([caracter, codigo]) => (
+                          <tr key={caracter}>
+                            <td className="border border-slate-700 px-4 py-2 text-center text-slate-100">
+                              {caracter === " " ? "Espacio" : caracter}
+                            </td>
+                            <td className="border border-slate-700 px-4 py-2 text-center font-mono text-slate-100">{codigo}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              }
+            </div>
+
+            <div className="mb-4">
+              {textoComprimido && (
+                <div className="bg-slate-800 text-slate-100 p-4 rounded shadow mb-4 border border-slate-700">
+                  <h2 className="text-xl font-bold mb-2">Resultados de Compresión</h2>
+                  <div className="mb-4">
+                    <h3 className="font-semibold">Texto Comprimido:</h3>
+                    <p className="bg-slate-900 p-2 rounded font-mono text-sm break-all text-slate-100">{textoComprimido}</p>
+                  </div>
+                  <div className="mb-4">
+                    <h3 className="font-semibold">Texto Descomprimido:</h3>
+                    <p className="bg-slate-900 p-2 rounded text-slate-100">{textoDescomprimido}</p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-slate-900 p-3 rounded border border-slate-700">
+                      <p className="font-semibold">Bits Originales:</p>
+                      <p className="text-lg">{texto.length * 8}</p>
+                    </div>
+                    <div className="bg-slate-900 p-3 rounded border border-slate-700">
+                      <p className="font-semibold">Bits Comprimidos:</p>
+                      <p className="text-lg">{textoComprimido.length}</p>
+                    </div>
+                    <div className="bg-slate-900 p-3 rounded border border-slate-700">
+                      <p className="font-semibold">Reducción:</p>
+                      <p className="text-lg">{((1 - textoComprimido.length / (texto.length * 8)) * 100).toFixed(2)}%</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </main>
   );
 }
