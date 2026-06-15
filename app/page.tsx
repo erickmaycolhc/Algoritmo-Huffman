@@ -119,10 +119,8 @@ export default function Home() {
     setMensajeOperacion("Archivo generado y descargado. Cargue el archivo para ver la información de la descompresión.");
 
     const payload = {
-      original: texto,
       comprimido: textoComprimidoGenerado,
       codificacion: codificacionGenerada,
-      frecuencias: frecuenciasCalculadas,
     };
 
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "text/plain" });
@@ -148,19 +146,77 @@ export default function Home() {
       try {
         const text = reader.result as string;
         const data = JSON.parse(text);
-        const original = data.original ?? "";
         const comprimido = data.comprimido ?? "";
-        const frecuenciasData: Record<string, number> = data.frecuencias ?? {};
+        const codificacionData: Record<string, string> | undefined = data.codificacion;
+        const frecuenciasData: Record<string, number> | undefined = data.frecuencias;
 
-        setTexto(original);
-        setFrecuencias(frecuenciasData);
-        const arbol = construirArbolHuffman(frecuenciasData);
+        let arbol: HuffmanNode | null = null;
+
+        if (frecuenciasData && Object.keys(frecuenciasData).length > 0) {
+          setFrecuencias(frecuenciasData);
+          arbol = construirArbolHuffman(frecuenciasData);
+        } else if (codificacionData && Object.keys(codificacionData).length > 0) {
+          const buildTreeFromCodificacion = (cod: Record<string, string>): HuffmanNode => {
+            const root: HuffmanNode = { caracter: null, frecuencia: 0 };
+            for (const [char, code] of Object.entries(cod)) {
+              let node = root;
+              for (const bit of code) {
+                if (bit === "0") {
+                  if (!node.izquierda) node.izquierda = { caracter: null, frecuencia: 0 };
+                  node = node.izquierda;
+                } else {
+                  if (!node.derecha) node.derecha = { caracter: null, frecuencia: 0 };
+                  node = node.derecha;
+                }
+              }
+              node.caracter = char;
+            }
+            return root;
+          };
+          arbol = buildTreeFromCodificacion(codificacionData);
+          setFrecuencias({});
+        } else {
+          alert("Archivo inválido. Asegúrese de que sea un .txt creado por la herramienta.");
+          return;
+        }
+
         setArbolHuffman(arbol);
-        const codificacionGenerada = data.codificacion ?? generarCodificacion(arbol);
+
+        const codificacionGenerada = codificacionData ?? generarCodificacion(arbol!);
         setCodificacion(codificacionGenerada);
         setTextoComprimido(comprimido);
+
         const textoDescomprimidoGenerado = comprimido && arbol ? descomprimirTexto(comprimido, arbol) : "";
         setTextoDescomprimido(textoDescomprimidoGenerado);
+
+        // Si el archivo no trae el texto original, usar el resultado de la descompresión
+        const originalFromFile = data.original ?? textoDescomprimidoGenerado;
+        setTexto(originalFromFile);
+
+        // Determinar el mapa de frecuencias final (provisto en archivo o reconstruido desde el texto)
+        let frecuenciasFinal: Record<string, number> = {};
+        if (frecuenciasData && Object.keys(frecuenciasData).length > 0) {
+          frecuenciasFinal = frecuenciasData;
+        } else if (originalFromFile) {
+          frecuenciasFinal = calcularFrencuencias(originalFromFile);
+        }
+        setFrecuencias(frecuenciasFinal);
+
+        // Rellenar las frecuencias en los nodos del árbol para mostrar conteos correctos
+        const actualizarFrecuenciasEnArbol = (nodo: HuffmanNode | undefined, freqMap: Record<string, number>): number => {
+          if (!nodo) return 0;
+          if (nodo.caracter != null) {
+            nodo.frecuencia = freqMap[nodo.caracter] ?? 0;
+            return nodo.frecuencia;
+          }
+          const izq = actualizarFrecuenciasEnArbol(nodo.izquierda, freqMap);
+          const der = actualizarFrecuenciasEnArbol(nodo.derecha, freqMap);
+          nodo.frecuencia = izq + der;
+          return nodo.frecuencia;
+        };
+
+        if (arbol) actualizarFrecuenciasEnArbol(arbol, frecuenciasFinal);
+
         setOperacion("cargar");
         setMensajeOperacion("Archivo cargado. Mostrando resultados de la descompresión.");
       } catch (err) {
