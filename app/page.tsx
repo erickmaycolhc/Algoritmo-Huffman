@@ -138,7 +138,7 @@ export default function Home() {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleCargaArchivo = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
@@ -156,24 +156,24 @@ export default function Home() {
           setFrecuencias(frecuenciasData);
           arbol = construirArbolHuffman(frecuenciasData);
         } else if (codificacionData && Object.keys(codificacionData).length > 0) {
-          const buildTreeFromCodificacion = (cod: Record<string, string>): HuffmanNode => {
-            const root: HuffmanNode = { caracter: null, frecuencia: 0 };
+          const construirArbolPorCodificacion = (cod: Record<string, string>): HuffmanNode => {
+            const raiz: HuffmanNode = { caracter: null, frecuencia: 0 };
             for (const [char, code] of Object.entries(cod)) {
-              let node = root;
+              let nodo = raiz;
               for (const bit of code) {
                 if (bit === "0") {
-                  if (!node.izquierda) node.izquierda = { caracter: null, frecuencia: 0 };
-                  node = node.izquierda;
+                  if (!nodo.izquierda) nodo.izquierda = { caracter: null, frecuencia: 0 };
+                  nodo = nodo.izquierda;
                 } else {
-                  if (!node.derecha) node.derecha = { caracter: null, frecuencia: 0 };
-                  node = node.derecha;
+                  if (!nodo.derecha) nodo.derecha = { caracter: null, frecuencia: 0 };
+                  nodo = nodo.derecha;
                 }
               }
-              node.caracter = char;
+              nodo.caracter = char;
             }
-            return root;
+            return raiz;
           };
-          arbol = buildTreeFromCodificacion(codificacionData);
+          arbol = construirArbolPorCodificacion(codificacionData);
           setFrecuencias({});
         } else {
           alert("Archivo inválido. Asegúrese de que sea un .txt creado por la herramienta.");
@@ -291,7 +291,7 @@ export default function Home() {
 
           <div className="mb-4">
             <Button variant="primary" onClick={cargarTxt}>Cargar y descomprimir</Button>
-            <input ref={fileInputRef} type="file" accept=".txt,text/plain" className="hidden" onChange={handleFileChange} />
+            <input ref={fileInputRef} type="file" accept=".txt,text/plain" className="hidden" onChange={handleCargaArchivo} />
           </div>
 
           <div className="mb-4">
